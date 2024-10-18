@@ -77,7 +77,6 @@
 #include "mongo/db/catalog/collection_catalog.h"
 #include "mongo/db/catalog/collection_impl.h"
 #include "mongo/db/catalog/collection_options.h"
-#include "mongo/db/catalog/collection_write_path.h"
 #include "mongo/db/catalog/database.h"
 #include "mongo/db/catalog/database_holder.h"
 #include "mongo/db/catalog/database_holder_impl.h"
@@ -91,6 +90,7 @@
 #include "mongo/db/change_streams_cluster_parameter_gen.h"
 #include "mongo/db/client.h"
 #include "mongo/db/cluster_role.h"
+#include "mongo/db/collection_crud/collection_write_path.h"
 #include "mongo/db/commands.h"
 #include "mongo/db/commands/feature_compatibility_version.h"
 #include "mongo/db/commands/feature_compatibility_version_gen.h"
@@ -272,6 +272,7 @@
 #include "mongo/util/allocator_thread.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/background.h"
+#include "mongo/util/buildinfo.h"
 #include "mongo/util/clock_source.h"
 #include "mongo/util/cmdline_utils/censor_cmdline.h"
 #include "mongo/util/concurrency/idle_thread_block.h"
@@ -356,10 +357,12 @@ void logStartup(OperationContext* opCtx) {
     toLog.append("pid", ProcessId::getCurrent().asLongLong());
 
 
-    BSONObjBuilder buildinfo(toLog.subobjStart("buildinfo"));
-    VersionInfoInterface::instance().appendBuildInfo(&buildinfo);
-    appendStorageEngineList(opCtx->getServiceContext(), &buildinfo);
-    buildinfo.doneFast();
+    {
+        BSONObjBuilder buildinfo(toLog.subobjStart("buildinfo"));
+        auto info = getBuildInfo();
+        info.setStorageEngines(getStorageEngineNames(opCtx->getServiceContext()));
+        info.serialize(&buildinfo);
+    }
 
     BSONObj o = toLog.obj();
 

@@ -46,13 +46,13 @@
 #include "mongo/bson/bsonmisc.h"
 #include "mongo/bson/bsonobj.h"
 #include "mongo/bson/bsonobjbuilder.h"
-#include "mongo/db/catalog/capped_collection_maintenance.h"
 #include "mongo/db/catalog/capped_utils.h"
 #include "mongo/db/catalog/collection.h"
 #include "mongo/db/catalog/collection_catalog.h"
 #include "mongo/db/catalog/collection_options.h"
 #include "mongo/db/catalog/database.h"
 #include "mongo/db/catalog_raii.h"
+#include "mongo/db/collection_crud/capped_collection_maintenance.h"
 #include "mongo/db/commands.h"
 #include "mongo/db/commands/sysprofile_gen.h"
 #include "mongo/db/concurrency/d_concurrency.h"
@@ -234,7 +234,10 @@ public:
         // also results in the pin being lifted.
         Timestamp pinTs =
             uassertStatusOK(opCtx->getServiceContext()->getStorageEngine()->pinOldestTimestamp(
-                opCtx, kTestingDurableHistoryPinName, requestedPinTs, round));
+                *shard_role_details::getRecoveryUnit(opCtx),
+                kTestingDurableHistoryPinName,
+                requestedPinTs,
+                round));
 
         uassertStatusOK(Helpers::insert(
             opCtx, collection, fixDocumentForInsert(opCtx, BSON("pinTs" << pinTs)).getValue()));

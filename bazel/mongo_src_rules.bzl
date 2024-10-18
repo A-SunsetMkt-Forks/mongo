@@ -1208,11 +1208,13 @@ MONGO_GLOBAL_INCLUDE_DIRECTORIES = [
     "-Isrc/third_party/SafeInt",
     "-I$(GENDIR)/src/mongo/db/modules/enterprise/src",
     "-Isrc/mongo/db/modules/enterprise/src",
+    "-Isrc/third_party/valgrind/include",
 ]
 
 MONGO_GLOBAL_ACCESSIBLE_HEADERS = [
     "//src/third_party/immer:headers",
     "//src/third_party/SafeInt:headers",
+    "//src/third_party/valgrind/include/valgrind:valgrind.h",
 ] + SASL_WINDOWS_INCLUDE_FILES
 
 MONGO_GLOBAL_SRC_DEPS = [
@@ -1875,7 +1877,7 @@ def idl_generator_impl(ctx):
 
     python = ctx.toolchains["@bazel_tools//tools/python:toolchain_type"].py3_runtime
     dep_depsets = [dep[IdlInfo].idl_deps for dep in ctx.attr.deps]
-    transitive_header_outputs = [dep[IdlInfo].header_output for dep in ctx.attr.deps]
+    transitive_header_outputs = [dep[IdlInfo].header_output for dep in ctx.attr.deps] + [hdr[DefaultInfo].files for hdr in ctx.attr.hdrs]
 
     # collect deps from python modules and setup the corresponding
     # path so all modules can be found by the toolchain.
@@ -1919,11 +1921,11 @@ def idl_generator_impl(ctx):
 
     return [
         DefaultInfo(
-            files = depset([gen_source, gen_header], transitive = [depset(transitive_header_outputs)]),
+            files = depset([gen_source, gen_header], transitive = transitive_header_outputs),
         ),
         IdlInfo(
             idl_deps = depset(ctx.attr.src.files.to_list(), transitive = [dep[IdlInfo].idl_deps for dep in ctx.attr.deps]),
-            header_output = gen_header,
+            header_output = depset([gen_header], transitive = transitive_header_outputs),
         ),
     ]
 
@@ -1949,6 +1951,11 @@ idl_generator = rule(
         "src": attr.label(
             doc = "The idl file to generate cpp/h files from.",
             allow_single_file = True,
+        ),
+        "hdrs": attr.label_list(
+            doc = "Dependent headers required by this IDL target",
+            allow_files = True,
+            default = [],
         ),
     },
     doc = "Generates header/source files from IDL files.",
