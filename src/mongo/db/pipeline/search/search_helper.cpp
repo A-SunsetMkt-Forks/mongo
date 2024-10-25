@@ -29,6 +29,7 @@
 
 #include "mongo/db/pipeline/search/search_helper.h"
 
+#include <boost/optional/optional.hpp>
 #include <list>
 #include <set>
 #include <string>
@@ -298,7 +299,22 @@ void setResolvedNamespaceForSearch(const NamespaceString& origNss,
         {origNss.coll().toString(),
          {resolvedView.getNamespace(), resolvedView.getPipeline(), uuid}}};
     expCtx->setResolvedNamespaces(resolvedNamespaces);
-    expCtx->viewNS = origNss;
+    expCtx->viewNS = boost::make_optional(origNss);
+}
+
+bool isStoredSource(const Pipeline* pipeline) {
+    auto ds = pipeline->peekFront();
+    auto searchStage = dynamic_cast<DocumentSourceSearch*>(ds);
+    if (searchStage && searchStage->isStoredSource()) {
+        return true;
+    }
+
+    auto searchStageInternal = dynamic_cast<DocumentSourceInternalSearchMongotRemote*>(ds);
+    if (searchStageInternal && searchStageInternal->isStoredSource()) {
+        return true;
+    }
+
+    return false;
 }
 
 bool isMongotPipeline(const Pipeline* pipeline) {
@@ -329,7 +345,8 @@ bool isMongotStage(DocumentSource* stage) {
         (dynamic_cast<mongo::DocumentSourceSearch*>(stage) ||
          dynamic_cast<mongo::DocumentSourceInternalSearchMongotRemote*>(stage) ||
          dynamic_cast<mongo::DocumentSourceVectorSearch*>(stage) ||
-         dynamic_cast<mongo::DocumentSourceListSearchIndexes*>(stage));
+         dynamic_cast<mongo::DocumentSourceListSearchIndexes*>(stage) ||
+         dynamic_cast<mongo::DocumentSourceSearchMeta*>(stage));
 }
 
 void assertSearchMetaAccessValid(const Pipeline::SourceContainer& pipeline,

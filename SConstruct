@@ -239,6 +239,16 @@ add_option(
 )
 
 add_option(
+    "remote-exec-release",
+    choices=["on", "off"],
+    const="off",
+    default=build_profile.remote_exec_release,
+    help="Turn on bazel remote execution for release",
+    nargs="?",
+    type="choice",
+)
+
+add_option(
     "lto",
     help="enable full link time optimizations (experimental, except with MSVC)",
     nargs=0,
@@ -821,6 +831,13 @@ add_option(
     default=False,
     action="store_true",
     help="Bypass link-model=dynamic check for macos versions <12.",
+)
+
+add_option(
+    "bazel-dynamic-execution",
+    default=False,
+    action="store_true",
+    help="use bazel dynamic execution experimental feature",
 )
 
 

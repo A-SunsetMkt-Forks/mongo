@@ -42,7 +42,7 @@ template <typename T, bool less = true>
 struct ExactEstimateComparator {
     bool operator()(const T& lhs, const T& rhs) const {
         if constexpr (less) {
-            return lhs.toDouble() <= rhs.toDouble();
+            return lhs.toDouble() < rhs.toDouble();
         }
         return lhs.toDouble() > rhs.toDouble();
     }

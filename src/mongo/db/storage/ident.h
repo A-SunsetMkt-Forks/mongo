@@ -51,4 +51,18 @@ protected:
     const std::string _ident;
 };
 
+namespace ident {
+bool isUserDataIdent(StringData ident);
+
+bool isInternalIdent(StringData ident);
+
+bool isResumableIndexBuildIdent(StringData ident);
+
+bool isCollectionIdent(StringData ident);
+
+StringData getInternalIdentPrefix();
+
+StringData getResumableIndexBuildIdentStem();
+}  // namespace ident
+
 }  // namespace mongo

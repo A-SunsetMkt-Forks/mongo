@@ -304,7 +304,6 @@ class ShardedClusterFixture(interface.Fixture, interface._DockerComposeInterface
                 {"getClusterParameter": self.set_cluster_parameter["parameter"]}
             )
 
-    # TODO SERVER-76343 remove the join_migrations parameter and the if clause depending on it.
     def stop_balancer(self, timeout_ms=300000, join_migrations=True):
         """Stop the balancer."""
         client = interface.build_client(self, self.auth_options)
@@ -759,6 +758,10 @@ class _RouterView(interface.Fixture):
     def get_driver_connection_url(self):
         """Return the driver connection URL."""
         return "mongodb://" + self.get_internal_connection_string()
+
+    def _all_mongo_d_s_t(self):
+        """Return the _RouterView instance."""
+        return [self]
 
 
 class _MongoSFixture(interface.Fixture, interface._DockerComposeInterface):

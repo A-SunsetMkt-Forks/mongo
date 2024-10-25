@@ -1080,7 +1080,7 @@ class RunPlugin(PluginInterface):
         RunPlugin._add_list_tags(subparsers)
         RunPlugin._add_generate_multiversion_exclude_tags(subparsers)
 
-    def parse(self, subcommand, parser, parsed_args, **kwargs):
+    def parse(self, subcommand, parser, parsed_args, should_configure_otel=True, **kwargs):
         """
         Return Run Subcommand if command is one we recognize.
 
@@ -1098,10 +1098,15 @@ class RunPlugin(PluginInterface):
             "generate-multiversion-exclude-tags",
             "generate-matrix-suites",
         ):
-            configure_resmoke.validate_and_update_config(parser, parsed_args)
             if config.EVERGREEN_TASK_ID is not None:
+                configure_resmoke.validate_and_update_config(
+                    parser, parsed_args, should_configure_otel
+                )
                 return TestRunnerEvg(subcommand, **kwargs)
             else:
+                configure_resmoke.validate_and_update_config(
+                    parser, parsed_args, should_configure_otel
+                )
                 return TestRunner(subcommand, **kwargs)
         return None
 
@@ -1599,6 +1604,14 @@ class RunPlugin(PluginInterface):
             action="store",
             metavar="FILE",
             help="The path to a file with feature flags, delimited by newlines.",
+        )
+
+        parser.add_argument(
+            "--disableFeatureFlags",
+            dest="disable_feature_flags",
+            action="append",
+            metavar="featureFlag1, featureFlag2, ...",
+            help="Disable tests with certain feature flags",
         )
 
         parser.add_argument(

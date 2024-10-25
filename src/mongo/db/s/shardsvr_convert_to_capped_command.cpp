@@ -28,7 +28,7 @@
  */
 
 #include "mongo/db/auth/authorization_session.h"
-#include "mongo/db/catalog/capped_utils.h"
+#include "mongo/db/collection_crud/capped_utils.h"
 #include "mongo/db/commands.h"
 #include "mongo/db/commands/feature_compatibility_version.h"
 #include "mongo/db/profile_settings.h"
@@ -76,18 +76,6 @@ public:
                     .getDatabaseProfileLevel(ns().dbName()));
 
             const auto& nss = ns();
-
-            {
-                // TODO SERVER-87119 remove this scope once v8.0 branches out
-                // Unsafe best effort check needed to prevent calling convertToCapped on sharded
-                // collections when mustUseCoordinator=false
-                const auto cri = uassertStatusOK(
-                    Grid::get(opCtx)->catalogCache()->getCollectionRoutingInfoWithRefresh(opCtx,
-                                                                                          nss));
-                uassert(ErrorCodes::NamespaceCannotBeSharded,
-                        "Can't convert a sharded collection to a capped collection",
-                        !cri.cm.isSharded());
-            }
 
             boost::optional<SharedSemiFuture<void>> coordinatorCompletionFuture;
             {
